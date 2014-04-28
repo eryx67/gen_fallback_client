@@ -1,0 +1,4 @@
+:name "gen_fallback_client"
+:node-sname "gen_fallback_client_edit"
+:lib-dirs '("deps" "apps")
+;; :start-command "erl -sname dhtor_edit"

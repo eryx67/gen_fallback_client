@@ -1,0 +1,12 @@
+{application, gen_fallback_client,
+ [
+  {description, "Generic client with fallback connections."},
+  {vsn, "1.0.0"},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {modules, [gen_fallback_client]},
+  {env, []}
+ ]}.
