@@ -52,6 +52,8 @@
 
 -behaviour(gen_server).
 
+-compile({parse_transform, lager_transform}).
+
 -export([start_link/5, start_link/6, stop/1, wait_connection/1]).
 
 %% gen_server Function Exports
@@ -142,7 +144,7 @@ wait_connection(Srv, Timeout) ->
 
 extract_options(Opts) ->
     Keys = [check_interval, check_step],
-    {Vals, Opts1} = emb_util:proplist_extract(Keys, validate_client_options(Opts)),
+    {Vals, Opts1} = proplist_extract(Keys, validate_client_options(Opts)),
     {lists:zip(Keys, Vals), Opts1}.
 
 stop(Srv) ->
@@ -353,18 +355,18 @@ wrap({stop, Reason, NewState}, State) ->
     {stop, Reason, State#state{handler_state = NewState}}.
 
 validate_client_options(Opts) ->
-    emb_util:proplist_validate(Opts,
-                               [],
-                               [{check_interval, fun validate_check_interval/1}
-                               , {check_step, fun validate_check_step/1}
-                               ],
-                               [{check_interval, {?CHECK_INTERVAL_MIN, ?CHECK_INTERVAL_MAX}}
-                               , {check_step, ?CHECK_INTERVAL_STEP}
-                               ]).
+    proplist_validate(Opts,
+                      [],
+                      [{check_interval, fun validate_check_interval/1}
+                      , {check_step, fun validate_check_step/1}
+                      ],
+                      [{check_interval, {?CHECK_INTERVAL_MIN, ?CHECK_INTERVAL_MAX}}
+                      , {check_step, ?CHECK_INTERVAL_STEP}
+                      ]).
 
 validate_server_spec(MFA={_M, _F, _A}, Opts) ->
-    [CheckInterval, CheckStep] = emb_util:proplist_require([check_interval, check_step],
-                                                           Opts),
+    [CheckInterval, CheckStep] = proplist_require([check_interval, check_step],
+                                                  Opts),
     {CMin, _} = CheckInterval,
     #server{
        mfa=MFA,
@@ -385,3 +387,35 @@ validate_check_interval(V={Min, Max}) when is_integer(Min)
 validate_check_step(V) when is_integer(V),
                             V > 0 ->
     V.
+
+proplist_extract(Keys, Props) ->
+    lists:mapfoldl(fun deepprops:extract/2, Props, Keys).
+
+proplist_validate(PL, Required, Validators, Defaults) ->
+    proplist_require(Required, PL),
+    PL1 =
+        [case proplists:get_value(K, Validators) of
+             undefined ->
+                 {K, V};
+             VF ->
+                 try
+                     {K, VF(V)}
+                 catch
+                     _:Error ->
+                         throw({error, {validation, {K, V}, Error, erlang:get_stacktrace()}})
+                 end
+         end || {K, V} <- PL],
+    PL2 = proplist_defaults(Defaults, PL1),
+    PL2.
+
+proplist_require(Keys, PL) ->
+    Undef = make_ref(),
+    [case proplists:get_value(Key, PL, Undef) of
+         Undef ->
+             throw({error, {Key, required}});
+         Val ->
+             Val
+     end || Key <- Keys].
+
+proplist_defaults(Defaults, PL) ->
+    [{K, V} || {K, V} <- Defaults, proplists:is_defined(K, PL) == false] ++ PL.
