@@ -54,7 +54,7 @@
 
 -compile({parse_transform, lager_transform}).
 
--export([start_link/5, start_link/6, stop/1, wait_connection/1]).
+-export([start_link/5, start_link/6, stop/1, wait_connection/1, wait_connection/2]).
 
 %% gen_server Function Exports
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
