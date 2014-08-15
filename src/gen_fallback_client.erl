@@ -81,9 +81,6 @@
 
 -type msec() :: integer().
 -type timestamp() :: {integer(), integer(), integer()}.
--type function_name() :: atom().
--type function_args() :: [term()].
--type mfa() :: {module(), function_name(), function_args()}.
 
 -record(state, {
           current,
