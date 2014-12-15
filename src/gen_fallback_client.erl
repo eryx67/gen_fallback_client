@@ -75,7 +75,7 @@
 
 -include("../include/log.hrl").
 
--define(CHECK_INTERVAL_MIN, 5000). %% ms
+-define(CHECK_INTERVAL_MIN, 1000). %% ms
 -define(CHECK_INTERVAL_MAX, ?CHECK_INTERVAL_MIN * 100). %% ms
 -define(CHECK_INTERVAL_STEP, 3).
 
@@ -335,8 +335,13 @@ clear_check_timer(S=#state{check_tref=ST}) ->
 
 incr_check_interval(undefined, _CS, CMin, _CMax) ->
     CMin;
-incr_check_interval(Timeout, Step, _CMin, CMax) ->
-    erlang:trunc(min(Timeout * Step, CMax)).
+incr_check_interval(Timeout, Step, CMin, CMax) ->
+    if Timeout >= CMax ->
+            CMin;
+       true ->
+            Current = Timeout * Step,
+            erlang:trunc(min(Current, CMax))
+    end.
 
 wrap({reply, Reply, NewState}, State) ->
     {reply, Reply, State#state{handler_state = NewState}};
